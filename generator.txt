@@ -1,0 +1,39 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct {
+        char name[32];
+        int cabin;
+        int cabin_type;
+        char departure_port[11];
+        char arrival_port[11];
+}PassengerInfo;
+
+void generateRandomWord(char *word, int length) {
+    const char charset[] = "abcdefghijklmnopqrstuvwxyz";
+    for (int i = 0; i < length; i++) {
+        word[i] = charset[rand() % 26];
+    }
+    word[length] = '\0';
+}
+
+PassengerInfo generator(int len) {
+    srand(time(NULL));
+
+    PassengerInfo * array = (PassengerInfo *) malloc(len * 62);
+
+    for(int i=0;i<len;i++){
+        generateRandomWord(array[i].name, 10 + rand() %(21+1));
+        array[i].cabin = 1 + rand()%(999+1);
+        array[i].cabin_type = rand()%4;
+        generateRandomWord(array[i].departure_port, 5 + rand() %(5+1));
+        generateRandomWord(array[i].arrival_port, 5 + rand() %(5+1));
+    }
+    return *array;
+}
+
+int main(){
+    PassengerInfo array = generator(10);
+    printf("%s",(array[4]).name);
+}
