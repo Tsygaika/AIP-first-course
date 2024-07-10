@@ -1,0 +1,315 @@
+#include <stdio.h>
+#include <string.h>
+
+#include "struct.h"//заголовочный файл со структурой
+#define file_name "data.bin"//бинарный файл
+
+void menu();
+
+void replace(char * word){//функция для замены \n на пробел в конце слова
+    for(int i=0; i<strlen(word);i++){
+        if (word[i]=='\n'){word[i]='\0';}
+    }
+}
+
+void eater(char* word){    //функция считывает все лишние символы
+    char* pn = strchr(word, '\n');
+    if (pn == NULL && strlen(word)!=0) {        
+        while((getchar())!='\n');
+    }
+}
+
+void isalph(char* word){//функция проверяющая строку на буквы
+    int flag=0;
+    if(strlen(word)==0){puts("Введена пустая строка или строка, содержащая несчитывающиеся символы");exit(1);}
+    for(int i;i<strlen(word);i++){
+        if(!((word[i]>='a' && word[i]<='z')||(word[i]>='A' && word[i]<='Z'))){flag++;}
+    }
+    if(flag){puts("Содержатся недопустимые символы");
+    exit(1);
+    }
+}
+
+void addRecord(){//добавление записи
+    FILE *f=fopen(file_name, "ab");//открываем файл для записи(если данные в файле есть, то они не стираются)
+    if(!f){
+        printf("Ошибка открытия файла %s\n", file_name);
+        return;}
+
+    struct flower add_flower;
+    puts("\nВведите данные о цветке");
+
+    printf("Название: ");
+    fgets(add_flower.name, 20, stdin);//значение записывается в строку name в структуре add_flower
+    char* w=add_flower.name;eater(w);replace(w);isalph(w);
+
+    printf("Цвет: ");
+    fgets(add_flower.color, 20, stdin);
+    w=add_flower.color;eater(w);replace(w);isalph(w);
+
+    printf("Страна происхождения: ");
+    fgets(add_flower.country, 20, stdin);
+    w=add_flower.country;eater(w);replace(w);isalph(w);
+
+    printf("Количество: ");
+    scanf("%d",&add_flower.count);
+    if(add_flower.count<0){puts("Количество цветов должно быть не меньше 0");fclose(f);return;}
+
+    fwrite(&add_flower,sizeof(struct flower),1,f);//записываем add_flower в файл
+    puts("Запись добавлена");
+    fclose(f);//закрываем файл
+    menu();
+}
+
+void deleteRecord(){
+    FILE *f=fopen(file_name, "r+b");//открываем файл для записи и чтения
+    if(!f){
+        printf("Ошибка открытия файла %s\n", file_name);
+        return;}
+    
+    puts("\nВведите номер удаляемой записи: ");
+    int n;
+    scanf("%d",&n);
+    fseek(f, 0, SEEK_END);//перемещаем курсор в конец файла
+	long file_size = ftell(f);//размер файла в байтах равен позиции курсора
+    fseek(f, 0, SEEK_SET);//перемещаем курсор в начало файла
+
+    if(n>file_size/sizeof(struct flower) || n<=0){puts("Записи с таким номером нет");fclose(f);return;}//проверка значения n
+    fseek(f, (n-1)*sizeof(struct flower), SEEK_SET);//перемещаем курсор в начало удаляемой записи
+    struct flower temp;
+    while(!feof(f)){//работает, пока не достигнут конец файла
+        fseek(f, sizeof(struct flower), SEEK_CUR);//перемещаемся на одну запись вперед
+        if (!fread(&temp, sizeof(struct flower), 1, f)){break;}
+        fseek(f, (-2)*(long)sizeof(struct flower), SEEK_CUR);//возвращаемся на 2 записи назад
+        fwrite(&temp,sizeof(struct flower),1,f);//и заменяем i-1 запись на i
+    }
+
+	#include <io.h>
+	int desc=_fileno(f); 
+	chsize(desc,file_size-sizeof(struct flower));//уменьшаем размер файла на размер одной записи
+
+    fclose(f);
+    puts("Запись удалена");
+    menu();
+}
+
+void searchRecord(){
+    puts("\nВыберите поле, по которому будет происходить поиск:");
+    puts("1.Название\n2.Цвет\n3.Страна\n4.Количество");
+
+    printf("Введите номер: ");
+    int flag,offset;//offset - смещение курсора относительно начала записи
+    scanf("%d",&flag);
+    switch(flag){
+    case 1:
+        offset=0;
+        flag=0;
+        break;
+    case 2:
+        offset=20;
+        flag=0;
+        break;
+    case 3:
+        offset=40;
+        flag=0;
+        break;
+    case 4:
+        offset=60;
+        flag=1;
+        break;
+    default:
+        puts("Неверное значение");
+        return;
+        break;
+    }
+
+    FILE *f=fopen(file_name, "rb");
+    if(!f){
+        printf("Ошибка открытия файла %s\n", file_name);
+        return;}
+    
+    int flag2=1;
+    printf("Введите значение, которое нужно найти: ");
+    if(flag){//поиск по числу
+        int number;
+        scanf("%d",&number);                    
+        puts("\n-------------------------------Результаты поиска-------------------------------");
+        puts("   \tНазвание  \t |\t   Цвет\t\t|\t Страна        | Кол-во");
+
+        fseek(f, offset, SEEK_SET);
+        int temp;
+        while(!feof(f)){
+            if(!fread(&temp, sizeof(int), 1, f)){break;}
+            if(temp==number){//если числа равны, то перемещаемся в начало записи, считываем его и выводим
+                fseek(f, -1*(long)sizeof(struct flower), SEEK_CUR);
+                struct flower get_flower;
+                fread(&get_flower, sizeof(struct flower), 1, f);
+                printf("    %-20s | %-20s | %-20s |  %3d\n",get_flower.name,get_flower.color,get_flower.country,get_flower.count);
+                flag2=0;
+            }
+            fseek(f, offset, SEEK_CUR);//перемещаемся на одну запись вперед
+        }                         
+        if(flag2){puts("\n\t\t\t    Ничего не найдено");}
+        }
+    else{//поиск по словам
+        char word[20];
+        while((getchar())!='\n');
+        fgets(word,20,stdin);
+        char* w=word;eater(w);replace(w);isalph(w);
+        puts("\n-------------------------------Результаты поиска-------------------------------");
+        puts("   \tНазвание  \t |\t   Цвет\t\t|\t Страна        | Кол-во");
+
+        fseek(f, offset, SEEK_SET);
+        char temp[20];
+        while(!feof(f)){
+            if(!fread(&temp, 20, 1, f)){break;}
+            if(!strcmp(temp,word)){//сравниваем слова
+                fseek(f, -1*(20+offset), SEEK_CUR);//если слова одинаковые, то смещаемся назад на offset + 20(размер слова)
+                struct flower get_flower;
+                fread(&get_flower, sizeof(struct flower), 1, f);
+                printf("    %-20s | %-20s | %-20s |  %3d\n",get_flower.name,get_flower.color,get_flower.country,get_flower.count);
+                fseek(f, offset, SEEK_CUR);
+                flag2=0;
+            }
+            else{fseek(f, sizeof(struct flower)-20, SEEK_CUR);}//иначе смещаемся вперед на размер записи - размер слова
+        }                         
+        if(flag2){puts("\n\t\t\t    Ничего не найдено");}
+    }
+    fclose(f);
+    menu();
+}
+
+void editRecord(){
+    FILE *f=fopen(file_name, "r+b");
+    if(!f){
+        printf("Ошибка открытия файла %s\n", file_name);
+    return;}
+
+    printf("\nВведите номер записи, которую нужно отредактировать: ");
+    int n,flag,offset;
+    scanf("%d",&n);
+
+    fseek(f, 0, SEEK_END);//перемещаем курсор в конец файла
+	long file_size = ftell(f);//размер файла в байтах равен позиции курсора
+    fseek(f, 0, SEEK_SET);//перемещаем курсор в начало файла
+    if(n>file_size/sizeof(struct flower) || n<=0){puts("Записи с таким номером нет");fclose(f);return;}//проверка значения n
+
+    printf("Что нужно отредактировать?\n1.Название\n2.Цвет\n3.Страну\n4.Количество");
+    printf("\nВведите номер: ");
+    scanf("%d",&flag);
+    switch (flag)
+    {
+    case 1:
+        offset=0;
+        flag=0;
+        break;
+    case 2:
+        offset=20;
+        flag=0;
+        break;
+    case 3:
+        offset=40;
+        flag=0;
+        break;
+    case 4:
+        offset=60;
+        flag=1;
+        break;
+    default:
+        puts("Неверное значение");
+        fclose(f);
+        return;
+        break;
+    }
+    fseek(f, (n-1)*sizeof(struct flower)+offset, SEEK_SET);//перемещаемся в начало нужной записи
+    printf("Введите новое значение: ");
+    if(flag){
+        int number;
+        scanf("%d",&number);
+        if(number<0){puts("Количество цветов должно быть не меньше 0");fclose(f);return;}
+        fwrite(&number,sizeof(int),1,f);//записываем новое значение вместо старого
+    }
+    else{
+        char word[20];
+        while((getchar())!='\n');
+        fgets(word, 20, stdin);
+        char* w=word;eater(w);replace(w);isalph(w);
+        fwrite(&word,sizeof(word),1,f);
+    }
+    fclose(f);
+    puts("Изменения сохранены");
+    menu();
+}
+
+void print(){
+    FILE *f=fopen(file_name, "rb");
+    if(!f){
+        printf("Ошибка открытия файла %s\n", file_name);
+    return;}
+
+    struct flower get_flower;
+    puts("\n--------------------------------Таблица данных:--------------------------------");
+    puts("№ |\t  Название\t |\t   Цвет\t\t|\t Страна        | Кол-во");
+    
+    int flag=1;
+    fseek(f, 0, SEEK_END);
+	long file_size = ftell(f);//получаем размер файла
+    fseek(f, 0, SEEK_SET);
+    if(file_size<sizeof(struct flower)){flag=0;puts("\n\t\t\t     Таблица  пуста");}
+
+    fread(&get_flower, sizeof(struct flower), 1, f);
+    for(int i=1; flag && (i*sizeof(struct flower)<=file_size); i++){
+        printf("%d | %-20s | %-20s | %-20s |  %3d\n",i,get_flower.name,get_flower.color,get_flower.country,get_flower.count);
+        fread(&get_flower, sizeof(struct flower), 1, f);
+        }
+    fclose(f);
+    menu();
+}
+
+void menu(){
+    puts("\n-------Меню-------\nВыберите действие:\n1.Добавить запись\n2.Удалить запись по ее номеру\n3.Поиск записи\n4.Редактирование записи\n5.Вывод всех записей");
+    printf("Введите номер действия: ");
+    int flag;
+    scanf("%d",&flag);
+    while ((getchar())!='\n');//после считывания scanf ставит \n, что ломает fgets. Исправляем это с помощью getchar()
+    switch(flag){
+    case 1:
+        addRecord();
+        break;
+    case 2:
+        deleteRecord();
+        break;
+    case 3:
+        searchRecord();
+        break;
+    case 4:
+        editRecord();
+        break;
+    case 5:
+        print();
+        break;
+    default:
+        puts("Неверное значение");
+        break;}
+}
+
+#define n 1     //1 - вывод пользователем, 2 - заданные значения
+
+int main(){
+    
+    #if n==1
+        //fclose(f);
+        addRecord();//переходим к добавлению записи
+    #elif n==2
+        FILE *f=fopen(file_name, "wb"); //создаем пустой файл(или очищаем старый с таким же названием)
+        struct flower flow1={"Rose","Red","Russia",116},flow2={"Tulip","Yellow","Turkey",10},flow3={"Lotus","pink","Spain",54};//исходные значения
+        fwrite(&flow1, sizeof(struct flower), 1, f);
+        fwrite(&flow2, sizeof(struct flower), 1, f);//записываем значения в бинарный файл
+        fwrite(&flow3, sizeof(struct flower), 1, f);
+        fclose(f);//закрываем файл
+        menu();//переходим в меню
+    #else
+        puts("Неверное значение");
+        return 0;
+    #endif
+}
