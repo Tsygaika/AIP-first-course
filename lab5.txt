@@ -1,0 +1,47 @@
+#include <stdio.h> 
+#define m 1
+#define n 1
+
+void create(int b[][n]){ //ввод матрицы
+    int i,j;
+    printf("Заполните матрицу:\n");
+    for(i=0;i<m;i++){
+        for(j=0;j<n;j++){
+            printf("b[%d][%d]=",i,j);scanf("%d",&b[i][j]);}
+    }
+}
+
+void print(int b[][n]){//вывод матрицы
+    int i,j;
+    for(i=0;i<m;i++){
+        for(j=0;j<n;j++){
+            printf("%5d",b[i][j]);}
+        puts("\n");
+    }
+}
+
+void sum(int b[][n]){//сумма элементов последней из строк матрицы...
+    int i,j,s=0,k,ind,mink=11;
+    for(i=0;i<m;i++){//вычислеине суммы всех элементов матрицы
+        for(j=0;j<n;j++){
+            s+=b[i][j];}}
+    //printf("%f",(float)s/(m*n)); // вывод ср. арифм. элементов всей матрицы
+    for(i=0;i<m;i++){//поиск последней строки,где меньше всего элементов превышает среднее арифметическое элементов всей матрицы
+        k=0;
+        for(j=0;j<n;j++){
+            if (b[i][j]>(float)s/(m*n)){k+=1;}}
+        if(k<=mink){mink=k;ind=i;}
+    }
+    for(s=0, j=0;j<n;j++){
+        s+=b[ind][j];} 
+    printf("Сумма равна: %d",s);
+}
+
+int b[m][n];
+
+int main(){
+    create(b);
+    print(b);
+    sum(b);
+    return 0;
+}
