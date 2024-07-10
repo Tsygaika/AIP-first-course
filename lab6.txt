@@ -1,0 +1,54 @@
+#include <stdio.h>
+#include <stdlib.h> 
+
+int create(float *b,int n){//ввод элементов массива
+    int i;
+    for(i=0;i<n;i++){
+            printf("b[%d]=",i);scanf("%f",&b[i]);}
+    return 0;
+}
+
+int print(float *b, int n){//вывод элементов массива
+    int i;
+    for(i=0;i<n;i++){
+            printf("%.3f ",b[i]);}
+    return 0;
+}
+
+int delete(float *b,int n){
+    float max=b[0];
+    int ind=0,newsize=0,i;
+    for(i=1;i<n;i++){//поиск первого максимального элемента
+        if (max<b[i]){max=b[i];ind=i;}}
+    if (ind<=1){puts("\nДо первого максимального нет элементов с нечетными индексами");return 0;}
+    else{
+        for (i=0;i<n;i++){//удаление из массива элементов с нечетными индексами, меньшими, чем индекс первого максимального
+            if(i<ind){
+            if(i%2==0){
+                b[newsize]=b[i];
+                newsize++;}}
+            else{b[newsize]=b[i];newsize++;}
+        }
+        printf("\nМодифицированный массив: ");
+        print(b,newsize);//вывод модифицированного массива
+    }
+    return 0;
+}
+
+int main(){
+    int n;
+    printf("Введите размер массива: ");scanf("%d",&n);
+    if(n<1){printf("Размер массива должен быть больше 0");}
+    else{
+        float *b=(float*) malloc(n*sizeof(float));
+        if(b==NULL){puts("Недостаточно памяти");}//проверка на пустой указатель
+        else{
+            create(b,n);
+            printf("Массив: ");
+            print(b,n);
+            delete(b,n);
+        }
+        free(b);
+    }
+    return 0;
+}
