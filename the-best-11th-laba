@@ -1,0 +1,140 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/time.h>
+
+typedef struct{ //структура из 8 ЛР
+    char name[20];
+    char color[20];
+    char country[20];
+    int count;
+}flower;
+
+typedef struct tnode{                
+  flower* value;       // указатель на структуру
+  struct tnode* left;      // левый потомок
+  struct tnode* right;     // правый потомок
+}tree;
+
+void replace(char * word){//функция для замены \n на пробел в конце слова
+    for(int i=0; i<strlen(word);i++){
+        if (word[i]=='\n'){word[i]='\0';}
+    }
+}
+
+void generateRandomWord(char* word, int length) {
+    const char charset[] = "abcdefghijklmnopqrstuvwxyz";
+    for (int i = 0; i < length; i++) {
+        word[i] = charset[rand() % 26];
+    }
+    word[length] = '\0';
+}
+
+tree* addtree(tree* p, flower* new){//функция добавления узла к дереву
+  int cmp;
+  if (p == NULL){//если дерево пустое или или предыдущий элемент не имел потомков, то создаем элемент
+    p = (tree*)malloc(sizeof(tree));
+    p->value = new;
+    p->left = (p->right = NULL);
+  }
+  else if (strcmp(new->name, p->value->name) < 0){
+    p->left = addtree(p->left, new);}//если элемент меньше, то перемещаемся в левое поддерево
+  else{
+    p->right = addtree(p->right, new);}//иначе в правое
+  return p;
+}
+
+void treeprint(tree* p){//функция вывода дерева
+  if (p != NULL){
+    treeprint(p->left);//сначала печатаем левое поддерево
+    printf("   | %-20s | %-20s | %-20s |  %3d\n", p->value->name, p->value->color, p->value->country, p->value->count);
+    treeprint(p->right);//потом правое
+  }
+}
+
+tree* search(tree *root, char* find){ //поиск структуры с полем, равным find
+  if ((root == NULL) || !(strcmp(root -> value -> name, find)) ){//если дерево пусто или ключ корня равен искомому ключу, то возвращается указатель на корень
+    return root;}
+  
+  if (strcmp(root -> value -> name, find) > 0 ){//поиск нужного узла: если значение в узле больше, чем find, то идет в левое поддерево
+    return search(root -> left, find);}
+  else{ 
+    return search(root -> right, find);}
+}
+
+void searchAll(tree * root, char* find){//поиск всех структур с полем, равным find
+  tree *cur = NULL, *tmp = root;
+  int flag = 0;
+
+  puts("\nРезультаты поиска:");
+  puts("   |\t  Название\t  |\t   Цвет\t\t |\t Страна         | Кол-во");
+  do{
+    cur = search(tmp, find);
+    if (!cur){break;}
+    printf("   | %-20s | %-20s | %-20s |  %3d\n", cur->value->name, cur->value->color, cur->value->country, cur->value->count);
+    flag++;
+    tmp = cur -> right; //перемещаемся в правую часть, тк нас интересуют равные элементы
+  }while(tmp);
+
+  if(!flag){printf("\t\t\t\tНичего не найдено\n");}
+}
+
+int main(){
+    int len, flag;
+    puts("Введите длину массива:");//получаем длину
+    scanf("%d", &len);
+    getchar();  //функция scanf оставляет после себя \n, который без getchar будет записан в fgets
+    if (len <= 0){puts("Неверный размер массива"); return 0;}
+
+    printf("Ввведите название для поиска: ");
+    char find[20];
+    fgets(find, 10, stdin);
+    replace(find);
+
+    printf("Искать с помощью:\n1)Дерева\n2)Хеш-таблицы\n");//выбираем способ поиска
+    scanf("%d", &flag);
+
+    flower* array = (flower*)malloc(len * sizeof(flower));  //создаем массив из структуры заполняем поля структуры
+    for(int i = 0; i < len; i++){
+        generateRandomWord(array[i].name, 1 + rand() % (0 + 1));  //от 2 до 2 букв
+        generateRandomWord(array[i].color, 5 + rand() % (5 + 1));   //от 5 до 10 букв
+        generateRandomWord(array[i].country, 5 + rand() % (5 + 1));
+        array[i].count = 1 + rand() % (999 + 1); //от 1 до 1000
+    }
+
+    struct timeval start, end;
+    long long time;
+
+    switch(flag){
+    case 1:   //поиск с помощью дерева
+        tree* root = NULL;
+
+        gettimeofday(&start, NULL);//время начала
+
+        for(int i=0; i < len; i++){ //заполняем дерево
+          root = addtree(root, &(array[i]));}
+        searchAll(root, find);
+
+        gettimeofday(&end, NULL);//время окончания
+        time = (end.tv_sec - start.tv_sec) * 1000000LL + (end.tv_usec - start.tv_usec);//определяем время работы
+        printf("\nВремя поиска деревом: %lld мкс\n\n",time);
+
+        printf("Ввведите 1, чтобы вывести таблицу: ");
+        int flag;
+        scanf("%d", &flag);
+        if (flag == 1){
+          treeprint(root);
+        }
+
+        break;
+
+    case 2:
+        //hash();
+        break;
+    
+    default:
+        printf("Такой функции нет");
+        break;
+    }
+    return 0;
+}
