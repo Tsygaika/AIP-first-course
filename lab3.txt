@@ -1,0 +1,47 @@
+#include <stdio.h>
+#include <math.h>
+
+int fact(int k){    //вычисление факториала числа k
+    if (k==1){return 1;}
+    else{
+        k=k*fact(k-1);
+        return k;}
+}
+
+int main(){
+    int item,k=2,maxk;
+    float x,func=0,tochn,fun1,fun2;
+    printf("Введите х: ");scanf("%f",&x); //ввод х
+    if ((-0.25<=x)&&(x<0.25)){ //проверка: находится ли х в диапазоне значений
+        printf("Для вычисления с заданной точностью введите 1, для вычисления с заданным количеством членов ряда введите 2: ");
+        scanf("%d",&item);
+        switch (item)
+        {case 1:    //первый способ вычисления
+            printf("Введите точность вычисления:");scanf("%f",&tochn);//ввод точности
+            fun2=pow(x,2); 
+            fun1=2*pow(x,3)+fun2;          
+            for(k=4;fabs(fun1-fun2)>=tochn;k++){     //используется цикл for для перебора значений k
+                fun2=fun1;
+                fun1=(fact(2*k)*pow(x,k))/(2*(2*k-1)*pow(fact(k),2))+fun2; //fact(k) - обращение к функции для вычисления  k!
+            }
+            printf("%.10f",fun1);
+            break;
+        case 2:     //второй способ вычисления
+            printf("Введите конечное значение k: ");scanf("%d",&maxk);//ввод maxk
+            if(maxk>1){
+            while(k<=maxk){  //используется цикл while
+                func+=(fact(2*k)*pow(x,k))/(2*(2*k-1)*pow(fact(k),2));
+                k++;}
+            printf("%.10f",func);
+            }
+            else{printf("k должен быть больше 1");}
+            break;
+        default:
+            printf("Введите 1 или 2");
+            break;
+        }
+    printf("\n%.10f",0.5-x-0.5*pow(1-4*x,0.5));
+    }
+    else{printf("х должен быть в промежутке [-0.25;0.25)");}
+    return 0;
+}
