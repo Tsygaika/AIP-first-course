@@ -1,0 +1,71 @@
+#include <stdio.h>
+#include <string.h>
+
+int func(char str[]){//функция обработки строки
+    char *istr;
+    istr=strtok(str,".");
+    char strc[330];
+    strcpy(strc, str);//копируем исходную строку
+    char *a[30];//список с указателями на слова
+    int num=0;//кол-во слов
+    istr=strtok(str,",");//выделение первого слова
+    a[0]=istr;
+    for(int i=1;istr!=NULL;i++){//заполняем список указателями на слова
+        istr=strtok(NULL,",");
+        a[i]=istr;
+        num++;}
+    int flag=0,count=0;
+    puts("Слова, которые встречаются не по одному разу: ");
+    for(int i=0;i<num;i++){//каждое слово проверяем на схожесть с последующими словами
+        count=0;
+        for(int j=i+1;j<num;j++){
+            if(strcmp(a[i],a[j])==0){
+            flag++;
+            count++;}
+        }
+        if(count==1){printf("%s\n",a[i]);}//если слово встречается 2 и более раз, то выведется предпоследнее похожее слово
+        }
+        if(flag==0){puts("Таких слов нет");}
+    printf("Исходная строка: %s.",strc);
+    return 0;
+}
+
+int strcheck(char str[]){//функция проверки строки на условие
+    char strc[330];
+    strcpy(strc, str);//копируем исходную строку
+    int flag=1,count=0,point=0;
+    for(int i=0;i<strlen(str);i++){//проверка на точку и на отсутствие двух запятых подряд
+        if(str[i]=='.'){point=1;break;}
+        if(str[i]==',' && str[i+1]==','){flag=0;break;}
+    }
+    if(!point){flag=0;}
+    else{
+        char *istr;
+        istr=strtok(str,",");
+        char s[40]="!@#$^&*(){}[]-+=\"\\№;:?_`~/|\'<> ";//строка символов, которые не латинские буквы и не цифры (кириллица не считывается)
+        while(istr!=NULL){
+            int len=strlen(istr);
+            if(len>10){flag=0;break;}//проверка слов на длину
+            for(int i=0;i<len;i++){
+                for(int j=0;j<33;j++){
+                    if(s[j]==istr[i]){//проверяем, является ли символ специальным
+                    flag=0;break;}}
+            }
+            istr=strtok(NULL,",");
+            count++;
+        }
+        if(count>30){flag=0;}//проверка на кол-во слов
+        if(count<=1){puts("В строке меньше двух слов, т.е. нельзя найти повторяющееся");return 0;}
+    }
+    if(flag){func(strc);}//если строка соответствует условию, то обращаемся к функции
+    else{puts("Строка не соответствует условию");}
+    return 0;
+}
+
+int main(){
+    char str[330];
+    puts("Введите строку");
+    fgets(str,330,stdin);
+    strcheck(str);
+    return 0;
+}
